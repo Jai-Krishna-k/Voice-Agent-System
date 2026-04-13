@@ -90,7 +90,9 @@ export default function IntegrationsPage() {
                 {provider === "google_sheets"
                   ? "OAuth + Apps Script real-time sync"
                   : provider === "hubspot"
-                  ? "OAuth — contacts synced every 5 min"
+                  ? "API token — contacts synced every 5 min"
+                  : provider === "pipedrive"
+                  ? "API token — persons synced every 5 min"
                   : "Coming soon"}
               </div>
             </Link>

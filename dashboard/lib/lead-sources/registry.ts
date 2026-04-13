@@ -1,10 +1,12 @@
 import type { LeadSourceProvider, ProviderId } from "./types";
 import { googleSheetsProvider } from "./google-sheets";
 import { hubspotProvider } from "./hubspot";
+import { pipedriveProvider } from "./pipedrive";
 
 const REGISTRY: Partial<Record<ProviderId, LeadSourceProvider>> = {
   google_sheets: googleSheetsProvider,
   hubspot: hubspotProvider,
+  pipedrive: pipedriveProvider,
 };
 
 export function getProvider(id: ProviderId): LeadSourceProvider {
