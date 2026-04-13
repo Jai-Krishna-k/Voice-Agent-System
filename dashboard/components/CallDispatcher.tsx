@@ -86,10 +86,10 @@ export default function CallDispatcher() {
                             <select
                                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500"
                                 name="modelProvider"
-                                defaultValue="openai"
+                                defaultValue="groq"
                             >
-                                <option value="openai">OpenAI (GPT-4o)</option>
                                 <option value="groq">Groq (Llama 3)</option>
+                                <option value="openai">OpenAI (GPT-4o)</option>
                             </select>
                         </div>
                         <div className="space-y-2">
@@ -97,16 +97,24 @@ export default function CallDispatcher() {
                             <select
                                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white outline-none focus:ring-2 focus:ring-purple-500"
                                 name="voice"
-                                defaultValue="alloy"
+                                defaultValue="anushka"
                             >
-                                <option value="alloy">Alloy (US)</option>
-                                <option value="echo">Echo (US)</option>
-                                <option value="shimmer">Shimmer (US)</option>
                                 <option value="anushka">Anushka (Indian - Sarvam)</option>
                                 <option value="aravind">Aravind (Indian - Sarvam)</option>
+                                <option value="amartya">Amartya (Indian - Sarvam)</option>
+                                <option value="dhruv">Dhruv (Indian - Sarvam)</option>
+                                <option value="alloy">Alloy (US - OpenAI)</option>
+                                <option value="echo">Echo (US - OpenAI)</option>
+                                <option value="shimmer">Shimmer (US - OpenAI)</option>
                             </select>
                         </div>
                     </div>
+
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                        Groq + Deepgram work with keys in <code className="text-gray-400">dashboard/.env.local</code>.
+                        OpenAI needs <code className="text-gray-400">OPENAI_API_KEY</code> in that file. Outbound calls
+                        also require the voice agent worker running: <code className="text-gray-400">python agent.py dev</code> from the project root.
+                    </p>
 
                     <button
                         type="submit"
