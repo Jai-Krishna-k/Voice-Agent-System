@@ -35,6 +35,8 @@ export default function LeadsPage() {
 
   useEffect(() => {
     load();
+    const interval = setInterval(silentRefresh, 5000);
+    return () => clearInterval(interval);
   }, [filter]);
 
   async function load() {
@@ -44,6 +46,14 @@ export default function LeadsPage() {
     const data = await res.json();
     setLeads(data.leads || []);
     setLoading(false);
+  }
+
+  // Refresh without showing spinner — keeps UI stable during polling
+  async function silentRefresh() {
+    const url = filter ? `/api/leads?status=${filter}` : "/api/leads";
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.leads) setLeads(data.leads);
   }
 
   async function act(id: string, action: string) {
