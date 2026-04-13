@@ -89,17 +89,17 @@ export default function KnowledgeBasePage() {
 
       <div
         onClick={() => inputRef.current?.click()}
-        className="bg-card border-2 border-dashed border-card-border rounded-xl p-10 text-center cursor-pointer hover:border-accent/50 transition-colors group"
+        className="bg-card border-2 border-dashed border-card-border rounded-sm p-10 text-center cursor-pointer hover:border-accent/50 transition-colors group"
       >
         {uploading ? (
           <Loader2 className="w-8 h-8 text-accent mx-auto mb-3 animate-spin" />
         ) : (
-          <Upload className="w-8 h-8 text-zinc-600 group-hover:text-accent mx-auto mb-3 transition-colors" />
+          <Upload className="w-8 h-8 text-stone-600 group-hover:text-accent mx-auto mb-3 transition-colors" />
         )}
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-stone-400">
           {uploading ? "Uploading..." : "Drop files here or click to upload"}
         </p>
-        <p className="text-xs text-zinc-600 mt-1">
+        <p className="text-xs text-stone-600 mt-1">
           TXT, MD, PDF — max 10MB per file
         </p>
         <input
@@ -114,7 +114,7 @@ export default function KnowledgeBasePage() {
       </div>
 
       {files.length > 0 ? (
-        <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+        <div className="bg-card border border-card-border rounded-sm overflow-hidden">
           <div className="border-b border-card-border px-5 py-3">
             <div className="grid grid-cols-5 gap-4 text-xs font-medium text-muted uppercase tracking-wider">
               <span className="col-span-2">File</span>
@@ -131,7 +131,7 @@ export default function KnowledgeBasePage() {
               >
                 <div className="flex items-center gap-2.5 col-span-2">
                   <FileText className="w-4 h-4 text-accent shrink-0" />
-                  <span className="text-sm text-zinc-300 truncate">
+                  <span className="text-sm text-stone-300 truncate">
                     {f.file_name}
                   </span>
                 </div>
@@ -158,10 +158,10 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
       ) : (
-        <div className="bg-card border border-card-border rounded-xl p-10 text-center">
-          <BookOpen className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+        <div className="bg-card border border-card-border rounded-sm p-10 text-center">
+          <BookOpen className="w-8 h-8 text-stone-700 mx-auto mb-3" />
           <p className="text-sm text-muted">No files uploaded</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-xs text-stone-600 mt-1">
             Upload documents to give your agent business context. When Pinecone
             is configured, documents are chunked and embedded for semantic
             search during calls.
@@ -178,7 +178,7 @@ function EmbeddingBadge({ status }: { status?: string }) {
     completed: "bg-green-500/10 text-green-400",
     processing: "bg-yellow-500/10 text-yellow-400",
     failed: "bg-red-500/10 text-red-400",
-    pending: "bg-zinc-500/10 text-zinc-500",
+    pending: "bg-zinc-500/10 text-stone-500",
   };
   const labels: Record<string, string> = {
     completed: "Indexed",

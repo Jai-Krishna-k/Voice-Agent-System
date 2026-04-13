@@ -10,8 +10,8 @@ export default function DashboardLayout({
     <div className="min-h-screen">
       <RealtimeRefresher />
       <Sidebar />
-      <main className="ml-60">
-        <div className="p-8 max-w-6xl">{children}</div>
+      <main className="ml-52">
+        <div className="px-8 py-8">{children}</div>
       </main>
     </div>
   );

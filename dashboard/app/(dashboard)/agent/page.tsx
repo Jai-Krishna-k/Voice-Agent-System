@@ -197,7 +197,7 @@ export default function AgentConfigPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleNew}
-            className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-card-border text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+            className="px-3 py-2 bg-[#0F0F0F] hover:bg-[#141414] border border-card-border text-white text-sm font-medium rounded-sm transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             New Config
@@ -205,7 +205,7 @@ export default function AgentConfigPage() {
           {selected && !selected.is_active && (
             <button
               onClick={() => handleActivate(selected.id)}
-              className="px-3 py-2 bg-white/5 hover:bg-green-500/15 border border-card-border hover:border-green-500/40 text-green-300 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              className="px-3 py-2 bg-[#0F0F0F] hover:bg-green-500/15 border border-card-border hover:border-green-500/40 text-green-300 text-sm font-medium rounded-sm transition-colors flex items-center gap-2"
             >
               <CheckCircle className="w-4 h-4" />
               Set as Active
@@ -215,7 +215,7 @@ export default function AgentConfigPage() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-sm transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -231,7 +231,7 @@ export default function AgentConfigPage() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg text-xs bg-destructive/10 text-red-300 border border-destructive/20">
+        <div className="p-3 rounded-sm text-xs bg-destructive/10 text-red-300 border border-destructive/20">
           {error}
         </div>
       )}
@@ -243,8 +243,8 @@ export default function AgentConfigPage() {
             Your Agents ({configs.length})
           </h2>
           {configs.length === 0 ? (
-            <div className="bg-card border border-card-border rounded-xl p-8 text-center">
-              <Bot className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+            <div className="bg-card border border-card-border rounded-sm p-8 text-center">
+              <Bot className="w-8 h-8 text-stone-700 mx-auto mb-3" />
               <p className="text-sm text-muted">No agents yet</p>
               <button
                 onClick={handleNew}
@@ -258,7 +258,7 @@ export default function AgentConfigPage() {
               <button
                 key={c.id}
                 onClick={() => handleSelect(c)}
-                className={`w-full text-left p-3.5 rounded-xl border transition-colors ${
+                className={`w-full text-left p-3.5 rounded-sm border transition-colors ${
                   selectedId === c.id
                     ? "bg-accent/10 border-accent/40"
                     : "bg-card border-card-border hover:border-white/20"
@@ -288,7 +288,7 @@ export default function AgentConfigPage() {
                         handleDelete(c.id);
                       }}
                       title="Delete"
-                      className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+                      className="p-1 text-stone-600 hover:text-red-400 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </span>
@@ -302,17 +302,17 @@ export default function AgentConfigPage() {
         {/* Right: editor */}
         <div className="lg:col-span-2 space-y-5">
           {!selected ? (
-            <div className="bg-card border border-card-border rounded-xl p-12 text-center">
-              <Bot className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+            <div className="bg-card border border-card-border rounded-sm p-12 text-center">
+              <Bot className="w-10 h-10 text-stone-700 mx-auto mb-3" />
               <p className="text-sm text-muted">
                 Select an agent from the list or create a new one
               </p>
             </div>
           ) : (
             <>
-              <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
+              <div className="bg-card border border-card-border rounded-sm p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400">
+                  <label className="text-xs font-medium text-stone-400">
                     Agent Name
                   </label>
                   <input
@@ -321,15 +321,15 @@ export default function AgentConfigPage() {
                       setForm((f) => ({ ...f, name: e.target.value }))
                     }
                     placeholder="Default Agent"
-                    className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
+                    className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-sm text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
+              <div className="bg-card border border-card-border rounded-sm p-5 space-y-4">
                 <div className="flex items-center gap-2">
                   <Bot className="w-4 h-4 text-accent" />
-                  <h2 className="text-sm font-medium text-zinc-300">
+                  <h2 className="text-sm font-medium text-stone-300">
                     System Prompt
                   </h2>
                 </div>
@@ -341,12 +341,12 @@ export default function AgentConfigPage() {
                   placeholder={`You are a helpful voice assistant for...
 
 Define your agent's personality, role, and behavior here. This is the core instruction set that drives every call.`}
-                  className="w-full px-3.5 py-3 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors h-56 resize-y font-mono leading-relaxed"
+                  className="w-full px-3.5 py-3 bg-surface border border-card-border rounded-sm text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors h-56 resize-y font-mono leading-relaxed"
                 />
               </div>
 
-              <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
-                <h2 className="text-sm font-medium text-zinc-300">
+              <div className="bg-card border border-card-border rounded-sm p-5 space-y-4">
+                <h2 className="text-sm font-medium text-stone-300">
                   Opening Greeting
                 </h2>
                 <textarea
@@ -355,22 +355,22 @@ Define your agent's personality, role, and behavior here. This is the core instr
                     setForm((f) => ({ ...f, greeting: e.target.value }))
                   }
                   placeholder="Hi there! I'm calling from..."
-                  className="w-full px-3.5 py-3 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors h-20 resize-none"
+                  className="w-full px-3.5 py-3 bg-surface border border-card-border rounded-sm text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors h-20 resize-none"
                 />
-                <p className="text-[11px] text-zinc-600">
+                <p className="text-[11px] text-stone-600">
                   The first thing the agent says when the call is answered
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
-                  <h2 className="text-sm font-medium text-zinc-300">Voice</h2>
+                <div className="bg-card border border-card-border rounded-sm p-5 space-y-4">
+                  <h2 className="text-sm font-medium text-stone-300">Voice</h2>
                   <select
                     value={form.voice_id}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, voice_id: e.target.value }))
                     }
-                    className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white outline-none focus:border-accent transition-colors"
+                    className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-sm text-sm text-white outline-none focus:border-accent transition-colors"
                   >
                     <optgroup label="Sarvam (Indian)">
                       <option value="anushka">Anushka (F)</option>
@@ -392,8 +392,8 @@ Define your agent's personality, role, and behavior here. This is the core instr
                   </select>
                 </div>
 
-                <div className="bg-card border border-card-border rounded-xl p-5 space-y-4">
-                  <h2 className="text-sm font-medium text-zinc-300">
+                <div className="bg-card border border-card-border rounded-sm p-5 space-y-4">
+                  <h2 className="text-sm font-medium text-stone-300">
                     LLM Provider
                   </h2>
                   <select
@@ -401,7 +401,7 @@ Define your agent's personality, role, and behavior here. This is the core instr
                     onChange={(e) =>
                       setForm((f) => ({ ...f, model_provider: e.target.value }))
                     }
-                    className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white outline-none focus:border-accent transition-colors"
+                    className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-sm text-sm text-white outline-none focus:border-accent transition-colors"
                   >
                     <option value="openai">OpenAI (GPT-4o-mini)</option>
                     <option value="anthropic">Anthropic (Claude Haiku)</option>
@@ -415,8 +415,8 @@ Define your agent's personality, role, and behavior here. This is the core instr
                 </div>
               </div>
 
-              <div className="bg-card border border-card-border rounded-xl p-5">
-                <h2 className="text-sm font-medium text-zinc-300 mb-2">
+              <div className="bg-card border border-card-border rounded-sm p-5">
+                <h2 className="text-sm font-medium text-stone-300 mb-2">
                   How It Works
                 </h2>
                 <p className="text-xs text-muted leading-relaxed">

@@ -30,3 +30,4 @@ yarn-error.log*
 # Runtime logs
 agent.log
 *.log
+.vercel

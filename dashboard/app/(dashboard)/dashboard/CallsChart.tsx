@@ -21,42 +21,42 @@ export default function CallsChart({
         <AreaChart data={data}>
           <defs>
             <linearGradient id="callsGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6366f1" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+              <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="#F59E0B" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#1e1e1e"
+            stroke="#181818"
             vertical={false}
           />
           <XAxis
             dataKey="date"
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            tick={{ fill: "#44403c", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            tick={{ fill: "#44403c", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
           />
           <Tooltip
             contentStyle={{
-              background: "#111",
-              border: "1px solid #1e1e1e",
-              borderRadius: "8px",
+              background: "#0C0C0C",
+              border: "1px solid #181818",
+              borderRadius: "2px",
               fontSize: "12px",
             }}
-            labelStyle={{ color: "#a1a1aa" }}
-            itemStyle={{ color: "#fff" }}
+            labelStyle={{ color: "#78716c" }}
+            itemStyle={{ color: "#F0EEE8" }}
           />
           <Area
             type="monotone"
             dataKey="calls"
-            stroke="#6366f1"
-            strokeWidth={2}
+            stroke="#F59E0B"
+            strokeWidth={1.5}
             fill="url(#callsGrad)"
           />
         </AreaChart>

@@ -129,23 +129,23 @@ function GoogleSheetsSetup() {
 
   return (
     <div className="max-w-3xl mx-auto p-8">
-      <Link href="/integrations" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-200 mb-6">
+      <Link href="/integrations" className="flex items-center gap-2 text-sm text-stone-400 hover:text-zinc-200 mb-6">
         <ArrowLeft className="w-4 h-4" /> Integrations
       </Link>
 
       <h1 className="text-2xl font-semibold text-white mb-2">Connect Google Sheets</h1>
-      <p className="text-sm text-zinc-500 mb-8">
+      <p className="text-sm text-stone-500 mb-8">
         The agent will call any new lead in your sheet and update each row with the outcome.
       </p>
 
       {step === "auth" && (
         <div className="space-y-4">
-          <div className="p-4 rounded-lg border border-white/10 bg-white/[0.02] text-sm text-zinc-300">
+          <div className="p-4 rounded-sm border border-white/10 bg-white/[0.02] text-sm text-stone-300">
             Click below to sign in with Google. We only request read/write access to the sheets you choose.
           </div>
           <a
             href="/api/lead-sources/oauth/start?provider=google_sheets"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-black font-medium hover:bg-zinc-200"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm bg-white text-black font-medium hover:bg-zinc-200"
           >
             Connect Google account
           </a>
@@ -180,7 +180,7 @@ function GoogleSheetsSetup() {
           <button
             onClick={createSource}
             disabled={loading || !spreadsheetId}
-            className="px-5 py-2.5 rounded-lg bg-accent text-white font-medium disabled:opacity-40 flex items-center gap-2"
+            className="px-5 py-2.5 rounded-sm bg-accent text-white font-medium disabled:opacity-40 flex items-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Continue
@@ -190,7 +190,7 @@ function GoogleSheetsSetup() {
 
       {step === "mapping" && preview && (
         <div className="space-y-5 max-w-xl">
-          <div className="text-sm text-zinc-400">
+          <div className="text-sm text-stone-400">
             Detected columns: {preview.columns.filter(c => c !== "__lead_uid").join(", ")}
           </div>
           <MappingRow
@@ -214,7 +214,7 @@ function GoogleSheetsSetup() {
           <button
             onClick={saveMapping}
             disabled={loading || !mapping.phone}
-            className="px-5 py-2.5 rounded-lg bg-accent text-white font-medium disabled:opacity-40"
+            className="px-5 py-2.5 rounded-sm bg-accent text-white font-medium disabled:opacity-40"
           >
             Save mapping
           </button>
@@ -223,13 +223,13 @@ function GoogleSheetsSetup() {
 
       {step === "apps-script" && (
         <div className="space-y-5">
-          <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-sm text-emerald-300 flex items-center gap-2">
+          <div className="p-4 rounded-sm border border-emerald-500/20 bg-emerald-500/5 text-sm text-emerald-300 flex items-center gap-2">
             <Check className="w-4 h-4" /> Mapping saved. Polling will pick up new leads within 5 minutes.
           </div>
-          <div className="text-sm text-zinc-400">
+          <div className="text-sm text-stone-400">
             For near-instant dispatch, install this Apps Script in the sheet:
           </div>
-          <ol className="text-sm text-zinc-300 space-y-2 list-decimal pl-5">
+          <ol className="text-sm text-stone-300 space-y-2 list-decimal pl-5">
             <li>Open the sheet → Extensions → Apps Script.</li>
             <li>Paste the snippet below; replace URL and secret as shown.</li>
             <li>Save. Triggers → Add trigger → <code>installEdits</code> → On edit.</li>
@@ -248,7 +248,7 @@ function GoogleSheetsSetup() {
           )}
           <button
             onClick={() => router.push("/integrations")}
-            className="px-5 py-2.5 rounded-lg bg-white/[0.05] text-white hover:bg-white/[0.08]"
+            className="px-5 py-2.5 rounded-sm bg-white/[0.05] text-white hover:bg-white/[0.08]"
           >
             Done
           </button>
@@ -277,7 +277,7 @@ function GoogleSheetsSetup() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs text-zinc-400 mb-1.5 block">{label}</label>
+      <label className="text-xs text-stone-400 mb-1.5 block">{label}</label>
       {children}
     </div>
   );
@@ -296,7 +296,7 @@ function MappingRow({
 }) {
   return (
     <div>
-      <label className="text-xs text-zinc-400 mb-1.5 block">{label}</label>
+      <label className="text-xs text-stone-400 mb-1.5 block">{label}</label>
       <select
         className="input"
         value={value}
@@ -316,14 +316,14 @@ function CodeBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="p-3 rounded border border-white/10 bg-black/30">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-zinc-500">{label}</span>
+        <span className="text-stone-500">{label}</span>
         <button
           onClick={() => {
             navigator.clipboard.writeText(value);
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
           }}
-          className="text-zinc-400 hover:text-zinc-200"
+          className="text-stone-400 hover:text-zinc-200"
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
         </button>

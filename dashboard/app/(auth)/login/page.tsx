@@ -4,6 +4,9 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail, Lock } from "lucide-react";
 
+const inputCls =
+  "w-full bg-[#0C0C0C] border border-[#1E1E1E] text-stone-200 text-sm px-3 py-2.5 placeholder-stone-700 focus:outline-none focus:border-amber-500/60 transition-colors";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,73 +22,61 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
-    if (error) {
-      setError(error.message);
-      setGoogleLoading(false);
-    }
-    // On success the browser is redirected to Google, no need to unset.
+    if (error) { setError(error.message); setGoogleLoading(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    const supabase = createClient();
     e.preventDefault();
+    const supabase = createClient();
     setLoading(true);
     setError("");
     setMessage("");
 
     if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        setError(error.message);
-      } else {
-        window.location.href = "/dashboard";
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) setError(error.message);
+      else window.location.href = "/dashboard";
     } else {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage("Check your email for a confirmation link");
-      }
+      if (error) setError(error.message);
+      else setMessage("Check your email for a confirmation link");
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#030303] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-lg font-bold">A</span>
-          </div>
-          <h1 className="text-xl font-semibold text-white">
-            {mode === "login" ? "Sign in to Aryantra" : "Create your account"}
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Voice Agent Platform
-          </p>
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <span className="text-amber-500 text-xl font-bold leading-none">■</span>
+          <span className="text-[11px] font-semibold tracking-widest text-stone-300 uppercase">
+            Aryantra
+          </span>
         </div>
 
-        <div className="bg-card border border-card-border rounded-xl p-6 space-y-4 mb-3">
+        {/* Card */}
+        <div className="border border-[#181818] p-8 space-y-5">
+          <div className="mb-2">
+            <h1 className="text-[18px] font-semibold text-stone-100 tracking-tight">
+              {mode === "login" ? "Sign in" : "Create account"}
+            </h1>
+            <p className="text-xs text-stone-600 mt-1">Voice Agent Platform</p>
+          </div>
+
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
             disabled={googleLoading || loading}
-            className="w-full py-2.5 bg-white hover:bg-zinc-100 text-zinc-900 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-2.5 border border-[#282828] hover:border-[#383838] text-stone-300 text-sm transition-colors disabled:opacity-40 flex items-center justify-center gap-2.5"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -101,89 +92,72 @@ export default function LoginPage() {
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-card-border" />
-            <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
-              or
-            </span>
-            <div className="flex-1 h-px bg-card-border" />
-          </div>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="bg-card border border-card-border rounded-xl p-6 space-y-4"
-        >
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5" /> Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
-            />
+            <div className="flex-1 h-px bg-[#181818]" />
+            <span className="text-[10px] text-stone-700 uppercase tracking-wider">or</span>
+            <div className="flex-1 h-px bg-[#181818]" />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-400 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" /> Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              minLength={6}
-              className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 rounded-lg text-xs text-center bg-destructive/10 text-red-300 border border-destructive/20">
-              {error}
+          {/* Email / Password */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-stone-500 flex items-center gap-1.5">
+                <Mail className="w-3 h-3" /> Email
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className={inputCls}
+              />
             </div>
-          )}
 
-          {message && (
-            <div className="p-3 rounded-lg text-xs text-center bg-success/10 text-green-300 border border-success/20">
-              {message}
+            <div className="space-y-1.5">
+              <label className="text-[11px] text-stone-500 flex items-center gap-1.5">
+                <Lock className="w-3 h-3" /> Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+                className={inputCls}
+              />
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : mode === "login" ? (
-              "Sign In"
-            ) : (
-              "Sign Up"
+            {error && (
+              <div className="p-3 text-xs text-center border border-red-500/20 text-red-400 bg-red-500/5">
+                {error}
+              </div>
             )}
-          </button>
+            {message && (
+              <div className="p-3 text-xs text-center border border-emerald-500/20 text-emerald-400 bg-emerald-500/5">
+                {message}
+              </div>
+            )}
 
-          <div className="text-center">
             <button
-              type="button"
-              onClick={() => {
-                setMode(mode === "login" ? "signup" : "login");
-                setError("");
-                setMessage("");
-              }}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              type="submit"
+              disabled={loading}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold text-[13px] px-5 py-2.5 w-full transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {mode === "login"
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Sign in"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === "login" ? "Sign In" : "Sign Up"}
             </button>
-          </div>
-        </form>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setMessage(""); }}
+                className="text-xs text-stone-600 hover:text-stone-300 transition-colors"
+              >
+                {mode === "login" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

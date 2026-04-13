@@ -315,7 +315,7 @@ export default function SettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-sm transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
           {saved ? "Saved" : "Save"}
@@ -323,7 +323,7 @@ export default function SettingsPage() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-lg text-xs bg-destructive/10 text-red-300 border border-destructive/20">
+        <div className="p-3 rounded-sm text-xs bg-destructive/10 text-red-300 border border-destructive/20">
           {error}
         </div>
       )}
@@ -421,7 +421,7 @@ export default function SettingsPage() {
             onDelete={() => handleDeleteKey("mistral_api_key")}
           />
           <div className="pt-2 border-t border-card-border space-y-3">
-            <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">Azure OpenAI</p>
+            <p className="text-[11px] text-stone-500 uppercase tracking-wider font-medium">Azure OpenAI</p>
             <SettingsInput
               label="Azure API Key"
               value={settings.azure_openai_api_key}
@@ -456,7 +456,7 @@ export default function SettingsPage() {
             hasExisting={hasKeys.sarvam_api_key}
             onDelete={() => handleDeleteKey("sarvam_api_key")}
           />
-          <p className="text-[11px] text-zinc-600">
+          <p className="text-[11px] text-stone-600">
             OpenAI voices (Alloy / Echo / Shimmer) reuse your OpenAI key from the Model Providers section.
           </p>
         </Section>
@@ -484,7 +484,7 @@ export default function SettingsPage() {
                   placeholder="ST_..."
                 />
               </div>
-              <PhoneOutgoing className="w-3.5 h-3.5 text-zinc-600 mt-7" />
+              <PhoneOutgoing className="w-3.5 h-3.5 text-stone-600 mt-7" />
             </div>
             <div className="flex items-end gap-2">
               <div className="flex-1">
@@ -499,7 +499,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleCreateInboundTrunk}
                 disabled={creatingTrunk}
-                className="px-3 py-2.5 text-[11px] font-medium rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                className="px-3 py-2.5 text-[11px] font-medium rounded-sm bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
               >
                 {creatingTrunk ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
                 Create
@@ -518,7 +518,7 @@ export default function SettingsPage() {
               placeholder="+919876543210"
               type="tel"
             />
-            <p className="text-[11px] text-zinc-600 leading-relaxed">
+            <p className="text-[11px] text-stone-600 leading-relaxed">
               To receive inbound calls, configure Vobiz to route your DID to LiveKit's SIP URI.
             </p>
           </div>
@@ -529,7 +529,7 @@ export default function SettingsPage() {
             <button
               onClick={handleDiagnoseInbound}
               disabled={diagnosing}
-              className="px-3 py-1.5 text-[11px] font-medium rounded-lg bg-white/5 hover:bg-white/10 text-zinc-300 border border-card-border transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-1.5 text-[11px] font-medium rounded-sm bg-[#0F0F0F] hover:bg-[#141414] text-stone-300 border border-card-border transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               {diagnosing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Stethoscope className="w-3 h-3" />}
               Diagnose
@@ -537,7 +537,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSetupInbound}
               disabled={setupStatus === "creating"}
-              className="px-3 py-1.5 text-[11px] font-medium rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-1.5 text-[11px] font-medium rounded-sm bg-accent/10 text-accent hover:bg-accent/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               {setupStatus === "creating" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
               Setup Inbound
@@ -545,30 +545,30 @@ export default function SettingsPage() {
           </div>
 
           {diagnostics && (
-            <div className="p-3 rounded-lg text-[11px] bg-surface border border-card-border space-y-2 font-mono">
+            <div className="p-3 rounded-sm text-[11px] bg-surface border border-card-border space-y-2 font-mono">
               <div>
-                <span className="text-zinc-500">Inbound trunks: </span>
-                <span className="text-zinc-300">{diagnostics.inboundTrunks?.length ?? 0}</span>
+                <span className="text-stone-500">Inbound trunks: </span>
+                <span className="text-stone-300">{diagnostics.inboundTrunks?.length ?? 0}</span>
                 {(diagnostics.inboundTrunks || []).map((t: any) => (
-                  <div key={t.sipTrunkId} className="pl-3 text-zinc-400">
+                  <div key={t.sipTrunkId} className="pl-3 text-stone-400">
                     {t.sipTrunkId} · {t.name || "—"} · [{(t.numbers || []).join(", ")}]
                   </div>
                 ))}
               </div>
               <div>
-                <span className="text-zinc-500">Dispatch rules: </span>
-                <span className="text-zinc-300">{diagnostics.dispatchRules?.length ?? 0}</span>
+                <span className="text-stone-500">Dispatch rules: </span>
+                <span className="text-stone-300">{diagnostics.dispatchRules?.length ?? 0}</span>
                 {(diagnostics.dispatchRules || []).map((r: any) => (
-                  <div key={r.sipDispatchRuleId} className="pl-3 text-zinc-400">
+                  <div key={r.sipDispatchRuleId} className="pl-3 text-stone-400">
                     {r.sipDispatchRuleId} · trunks=[{(r.trunkIds || []).join(", ")}]
                   </div>
                 ))}
               </div>
               <div>
-                <span className="text-zinc-500">Mapped numbers: </span>
-                <span className="text-zinc-300">{diagnostics.phoneNumbers?.length ?? 0}</span>
+                <span className="text-stone-500">Mapped numbers: </span>
+                <span className="text-stone-300">{diagnostics.phoneNumbers?.length ?? 0}</span>
                 {(diagnostics.phoneNumbers || []).map((p: any) => (
-                  <div key={p.id} className="pl-3 text-zinc-400">
+                  <div key={p.id} className="pl-3 text-stone-400">
                     {p.phone_number} → {p.agent_config_name || "—"}
                   </div>
                 ))}
@@ -577,7 +577,7 @@ export default function SettingsPage() {
           )}
 
           {setupStatus && setupStatus !== "creating" && (
-            <div className="p-2 rounded-lg text-[11px] bg-green-500/10 text-green-400 border border-green-500/20">
+            <div className="p-2 rounded-sm text-[11px] bg-green-500/10 text-green-400 border border-green-500/20">
               {setupStatus}
             </div>
           )}
@@ -587,7 +587,7 @@ export default function SettingsPage() {
               {phoneNumbers.map((pn) => (
                 <div
                   key={pn.id}
-                  className="flex items-center justify-between px-3 py-2 bg-surface rounded-lg border border-card-border"
+                  className="flex items-center justify-between px-3 py-2 bg-surface rounded-sm border border-card-border"
                 >
                   <div>
                     <span className="text-sm text-white font-mono">{pn.phone_number}</span>
@@ -595,7 +595,7 @@ export default function SettingsPage() {
                   </div>
                   <button
                     onClick={() => handleDeletePhone(pn.id)}
-                    className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+                    className="p-1 text-stone-600 hover:text-red-400 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -610,12 +610,12 @@ export default function SettingsPage() {
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
               placeholder="+919876543210"
-              className="flex-1 px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
+              className="flex-1 px-3.5 py-2.5 bg-surface border border-card-border rounded-sm text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
             />
             <select
               value={newConfigId}
               onChange={(e) => setNewConfigId(e.target.value)}
-              className="px-3 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white outline-none focus:border-accent transition-colors"
+              className="px-3 py-2.5 bg-surface border border-card-border rounded-sm text-sm text-white outline-none focus:border-accent transition-colors"
             >
               <option value="">No agent</option>
               {agentConfigs.map((c) => (
@@ -627,7 +627,7 @@ export default function SettingsPage() {
             <button
               onClick={handleAddPhone}
               disabled={addingPhone || !newPhone.trim()}
-              className="px-3 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              className="px-3 py-2.5 bg-accent hover:bg-accent-hover text-white text-sm rounded-sm transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               {addingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Add
@@ -635,19 +635,19 @@ export default function SettingsPage() {
           </div>
         </Section>
 
-        <div className="bg-card border border-red-500/20 rounded-xl p-5 space-y-3">
+        <div className="bg-card border border-red-500/20 rounded-sm p-5 space-y-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-400" />
             <h2 className="text-sm font-medium text-red-300">Danger Zone</h2>
           </div>
-          <p className="text-xs text-zinc-500 leading-relaxed">
+          <p className="text-xs text-stone-500 leading-relaxed">
             Permanently delete your account, all calls, recordings, agent configs, and settings.
             This cannot be undone.
           </p>
           <button
             onClick={handleDeleteAccount}
             disabled={deletingAccount}
-            className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 text-sm font-medium rounded-sm transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {deletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Delete Account
@@ -655,8 +655,8 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex items-start gap-2 px-1">
-          <ShieldCheck className="w-3.5 h-3.5 text-zinc-600 mt-0.5 shrink-0" />
-          <p className="text-xs text-zinc-600">
+          <ShieldCheck className="w-3.5 h-3.5 text-stone-600 mt-0.5 shrink-0" />
+          <p className="text-xs text-stone-600">
             Keys are stored in Supabase with row-level security. Only you can access your settings.
           </p>
         </div>
@@ -678,18 +678,18 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+    <div className="bg-card border border-card-border rounded-sm overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center justify-between p-5 hover:bg-[#0F0F0F] transition-colors"
       >
         <div className="flex items-center gap-2">
           {icon}
-          <h2 className="text-sm font-medium text-zinc-300">{title}</h2>
+          <h2 className="text-sm font-medium text-stone-300">{title}</h2>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-stone-500 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {open && <div className="px-5 pb-5 space-y-3">{children}</div>}
@@ -721,7 +721,7 @@ function SettingsInput({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-zinc-400">{label}</label>
+        <label className="text-xs font-medium text-stone-400">{label}</label>
         {sensitive && hasExisting && (
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-green-400/70 flex items-center gap-1">
@@ -733,7 +733,7 @@ function SettingsInput({
                 type="button"
                 onClick={onDelete}
                 title="Delete saved key"
-                className="text-zinc-600 hover:text-red-400 transition-colors"
+                className="text-stone-600 hover:text-red-400 transition-colors"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -746,7 +746,7 @@ function SettingsInput({
         value={isMasked ? "" : value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={isMasked ? "Key saved — enter new value to replace" : placeholder}
-        className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-lg text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
+        className="w-full px-3.5 py-2.5 bg-surface border border-card-border rounded-sm text-sm text-white placeholder-zinc-600 outline-none focus:border-accent transition-colors"
       />
     </div>
   );

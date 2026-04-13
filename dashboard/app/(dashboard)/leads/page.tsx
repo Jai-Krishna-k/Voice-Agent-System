@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, RefreshCw, PhoneOff, Phone } from "lucide-react";
+import { RefreshCw, PhoneOff, Phone } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -18,14 +18,18 @@ interface Lead {
 }
 
 const STATUSES = ["", "new", "queued", "calling", "called", "failed", "do_not_call"];
-const STATUS_COLORS: Record<string, string> = {
-  new: "bg-blue-500/20 text-blue-300",
-  queued: "bg-indigo-500/20 text-indigo-300",
-  calling: "bg-amber-500/20 text-amber-300",
-  called: "bg-emerald-500/20 text-emerald-300",
-  failed: "bg-red-500/20 text-red-300",
-  do_not_call: "bg-zinc-500/20 text-zinc-300",
-};
+
+function statusColor(status: string) {
+  const map: Record<string, string> = {
+    new:         "text-sky-400",
+    queued:      "text-amber-400",
+    calling:     "text-amber-500",
+    called:      "text-emerald-500",
+    failed:      "text-red-500",
+    do_not_call: "text-stone-600 line-through",
+  };
+  return map[status] ?? "text-stone-500";
+}
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -48,7 +52,6 @@ export default function LeadsPage() {
     setLoading(false);
   }
 
-  // Refresh without showing spinner — keeps UI stable during polling
   async function silentRefresh() {
     const url = filter ? `/api/leads?status=${filter}` : "/api/leads";
     const res = await fetch(url);
@@ -65,9 +68,7 @@ export default function LeadsPage() {
         body: JSON.stringify({ action }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Action failed");
-      }
+      if (!res.ok) alert(data.error || "Action failed");
       await load();
     } finally {
       setBusy(null);
@@ -75,30 +76,32 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Users className="w-6 h-6 text-accent" />
-          <h1 className="text-2xl font-semibold text-white">Leads</h1>
+    <div className="max-w-6xl">
+      {/* Header */}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">CRM</p>
+          <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">Leads</h1>
         </div>
         <button
           onClick={load}
-          className="p-2 rounded hover:bg-white/[0.05] text-zinc-400"
+          className="p-2 text-stone-600 hover:text-stone-300 transition-colors"
           title="Refresh"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      {/* Filter tabs */}
+      <div className="flex gap-5 border-b border-[#181818] mb-6">
         {STATUSES.map((s) => (
           <button
             key={s || "all"}
             onClick={() => setFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+            className={`pb-3 text-xs transition-colors ${
               filter === s
-                ? "bg-white text-black"
-                : "bg-white/[0.05] text-zinc-400 hover:bg-white/[0.08]"
+                ? "text-amber-500 border-b border-amber-500 -mb-px"
+                : "text-stone-600 hover:text-stone-300"
             }`}
           >
             {s || "All"}
@@ -107,70 +110,70 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <div className="text-zinc-500 text-sm">Loading…</div>
+        <div className="text-stone-600 text-sm py-8">Loading…</div>
       ) : leads.length === 0 ? (
-        <div className="text-zinc-500 text-sm">No leads yet. Connect an integration to start.</div>
+        <div className="text-stone-700 text-sm py-12 text-center border border-[#181818]">
+          No leads yet. Connect an integration to start.
+        </div>
       ) : (
-        <div className="border border-white/10 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-white/[0.03] text-zinc-400 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left px-4 py-2.5 font-medium">Lead</th>
-                <th className="text-left px-4 py-2.5 font-medium">Phone</th>
-                <th className="text-left px-4 py-2.5 font-medium">Status</th>
-                <th className="text-left px-4 py-2.5 font-medium">Outcome</th>
-                <th className="text-left px-4 py-2.5 font-medium">Attempts</th>
-                <th className="text-left px-4 py-2.5 font-medium">Next retry</th>
-                <th className="text-right px-4 py-2.5 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {leads.map((l) => (
-                <tr key={l.id}>
-                  <td className="px-4 py-3 text-white">
-                    <div>{l.name || "—"}</div>
-                    {l.email && <div className="text-xs text-zinc-500">{l.email}</div>}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-300 font-mono text-xs">{l.phone}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded text-xs ${STATUS_COLORS[l.status] || "bg-white/[0.05] text-zinc-400"}`}>
-                      {l.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-300 text-xs">
-                    {l.outcome_code || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-400 text-xs">{l.attempts}</td>
-                  <td className="px-4 py-3 text-zinc-500 text-xs">
-                    {l.next_retry_at ? new Date(l.next_retry_at).toLocaleString() : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex gap-1">
-                      <button
-                        disabled={busy === l.id || l.status === "do_not_call" || l.status === "calling" || l.status === "queued"}
-                        onClick={() => act(l.id, "dispatch")}
-                        className="p-1.5 rounded hover:bg-white/[0.05] text-emerald-400 disabled:opacity-30"
-                        title="Call now"
-                      >
-                        {busy === l.id
-                          ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          : <Phone className="w-3.5 h-3.5" />
-                        }
-                      </button>
-                      <button
-                        disabled={busy === l.id}
-                        onClick={() => act(l.id, "do_not_call")}
-                        className="p-1.5 rounded hover:bg-white/[0.05] text-zinc-400 disabled:opacity-30"
-                        title="Mark do-not-call"
-                      >
-                        <PhoneOff className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div>
+          {/* Column headers */}
+          <div className="flex items-center py-2 border-b border-[#181818]">
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 w-36">Name</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 w-36">Phone</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 w-24">Status</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 w-40">Outcome</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 w-16">Tries</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 ml-auto">Next retry</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-600 w-16 text-right">Act</span>
+          </div>
+
+          {leads.map((l) => (
+            <div
+              key={l.id}
+              className="flex items-center py-3 border-b border-[#0F0F0F] hover:bg-[#0C0C0C] transition-colors"
+            >
+              <div className="w-36 shrink-0">
+                <div className="text-sm text-stone-200 truncate">{l.name || "—"}</div>
+                {l.email && <div className="text-[10px] text-stone-600 truncate">{l.email}</div>}
+              </div>
+              <span className="font-mono text-xs text-stone-400 w-36 shrink-0">{l.phone}</span>
+              <span className={`text-xs w-24 shrink-0 ${statusColor(l.status)}`}>
+                {l.status === "calling" && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse align-middle" />
+                )}
+                {l.status}
+              </span>
+              <span className="text-xs text-stone-600 w-40 shrink-0 truncate">
+                {l.outcome_code?.replace(/_/g, " ") || "—"}
+              </span>
+              <span className="text-xs text-stone-600 w-16 shrink-0">{l.attempts}</span>
+              <span className="text-xs text-stone-700 ml-auto">
+                {l.next_retry_at ? new Date(l.next_retry_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+              </span>
+              <div className="w-16 flex items-center justify-end gap-1 shrink-0">
+                <button
+                  disabled={busy === l.id || l.status === "do_not_call" || l.status === "calling" || l.status === "queued"}
+                  onClick={() => act(l.id, "dispatch")}
+                  className="p-1.5 text-emerald-600 hover:text-emerald-400 disabled:opacity-30 transition-colors"
+                  title="Call now"
+                >
+                  {busy === l.id
+                    ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    : <Phone className="w-3.5 h-3.5" />
+                  }
+                </button>
+                <button
+                  disabled={busy === l.id}
+                  onClick={() => act(l.id, "do_not_call")}
+                  className="p-1.5 text-stone-600 hover:text-stone-400 disabled:opacity-30 transition-colors"
+                  title="Mark do-not-call"
+                >
+                  <PhoneOff className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
