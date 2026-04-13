@@ -8,6 +8,7 @@ import asyncio
 import logging
 import json
 import time
+import aiohttp
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -47,6 +48,26 @@ try:
         logger.info("Supabase env vars not set — call logging disabled")
 except Exception as e:
     logger.warning(f"Failed to init Supabase client: {e}")
+
+async def _trigger_classify(call_id: str):
+    """Fire-and-forget POST to classify-pending-calls so write-back happens
+    within seconds of the call ending, without waiting for the pg_cron sweep."""
+    url = os.getenv("NEXT_PUBLIC_APP_URL", "").rstrip("/")
+    secret = os.getenv("CRON_BEARER", "")
+    if not url or not secret or not call_id:
+        return
+    try:
+        async with aiohttp.ClientSession() as session:
+            await session.post(
+                f"{url}/api/cron/classify-pending-calls",
+                json={"call_id": call_id},
+                headers={"Authorization": f"Bearer {secret}", "Content-Type": "application/json"},
+                timeout=aiohttp.ClientTimeout(total=30),
+            )
+        logger.info(f"Triggered classify for call {call_id}")
+    except Exception as e:
+        logger.warning(f"classify trigger failed: {e}")
+
 
 def _fetch_knowledge_base(user_id: str = None) -> str | None:
     """Fetch all knowledge base content for this user. Returns combined text or None."""
@@ -518,6 +539,7 @@ class TransferFunctions(llm.ToolContext):
         super().__init__(tools=[])
         self.ctx = ctx
         self.phone_number = phone_number
+        self._session = None  # set after AgentSession is created
 
     @llm.function_tool(description="Look up user details by phone number.")
     async def lookup_user(self, phone: str):
@@ -587,6 +609,53 @@ class TransferFunctions(llm.ToolContext):
             logger.error(f"Transfer failed: {e}")
             return f"Error executing transfer: {e}"
 
+    @llm.function_tool(
+        description=(
+            "End the call and hang up. Use this when: the conversation is naturally "
+            "complete, the customer has said goodbye or declined further conversation, "
+            "you've reached voicemail and finished leaving a message, you've confirmed "
+            "it's a wrong number, or the customer is unresponsive after two attempts "
+            "to re-engage. Always say a short farewell before calling this."
+        )
+    )
+    async def end_call(self, farewell: Optional[str] = None) -> str:
+        """
+        End the call gracefully by removing the SIP participant from the room.
+
+        Args:
+            farewell: Short farewell phrase to speak before hanging up (optional).
+        """
+        if farewell and self._session:
+            try:
+                handle = self._session.say(farewell, allow_interruptions=False)
+                await handle.wait_for_playout()
+                await asyncio.sleep(0.4)
+            except Exception as e:
+                logger.warning(f"end_call farewell TTS error: {e}")
+
+        # Resolve the SIP participant identity
+        participant_identity = None
+        if self.phone_number:
+            participant_identity = f"sip_{self.phone_number}"
+        else:
+            for p in self.ctx.room.remote_participants.values():
+                participant_identity = p.identity
+                break
+
+        if participant_identity:
+            try:
+                logger.info(f"end_call: removing participant {participant_identity}")
+                await self.ctx.api.room.remove_participant(
+                    api.RoomParticipantIdentity(
+                        room=self.ctx.room.name,
+                        identity=participant_identity,
+                    )
+                )
+            except Exception as e:
+                logger.warning(f"end_call remove_participant error: {e}")
+
+        return "Call ended."
+
 
 async def _wait_for_remote_audio(room, timeout: float = 1.0) -> None:
     """Block (briefly) until a remote participant has a subscribed audio track.
@@ -641,8 +710,16 @@ class OutboundAssistant(Agent):
                  user_id: str = None, user_api_keys: dict = None) -> None:
         base_instructions = system_prompt_override or config.SYSTEM_PROMPT
         if call_context:
-             base_instructions += f"\n\n**CRITICAL CONTEXT FOR THIS CALL:**\n{call_context}"
-             logger.info(f"Added call context: {call_context[:100]}...")
+            base_instructions += f"\n\n**CRITICAL CONTEXT FOR THIS CALL:**\n{call_context}"
+            logger.info(f"Added call context: {call_context[:100]}...")
+        base_instructions += (
+            "\n\n**CALL CONTROL:** You have an end_call() tool. Use it when: "
+            "the conversation is naturally complete, the customer says goodbye or declines further conversation, "
+            "you detect voicemail (leave a brief message then end the call), "
+            "it's a wrong number (apologize briefly then end), "
+            "or the customer is unresponsive after two re-engagement attempts. "
+            "Always say a natural farewell as the `farewell` argument to end_call() — never hang up silently."
+        )
 
         super().__init__(
             instructions=base_instructions,
@@ -814,17 +891,14 @@ async def entrypoint(ctx: agents.JobContext):
     egress_id: str | None = None
     logger.info(f"call_id={call_id}, supabase_client={bool(_supabase_client)}")
 
-    # Initialize function context (tools only used when agent acts as a support/sales rep)
+    # Initialize function context
     fnc_ctx = TransferFunctions(ctx, phone_number)
-    # For the buyer-inquiry persona defined in config.SYSTEM_PROMPT, tools are not exposed —
-    # handing transfer_call / lookup_user to a "buyer" LLM causes spurious transfers.
-    # Tools are only passed when the agent config overrides to a support/rep persona.
-    agent_tools = []
+    # end_call is always available so the agent can hang up in any scenario.
+    # transfer_call / lookup_user are only exposed when the agent config opts in.
+    agent_tools = [fnc_ctx.end_call]
     if agent_config and agent_config.get("enable_tools"):
-        agent_tools = list(fnc_ctx.function_tools.values())
-        logger.info(f"Tools enabled for this agent config: {[t.name for t in agent_tools]}")
-    else:
-        logger.info("Tools disabled for buyer-persona agent (set enable_tools=true in agent config to enable)")
+        agent_tools += [fnc_ctx.lookup_user, fnc_ctx.transfer_call]
+        logger.info(f"Extra tools enabled: lookup_user, transfer_call")
 
     # Initialize the Agent Session with plugins
     # When the call is tied to a dashboard user, only the per-user key is honoured.
@@ -840,6 +914,8 @@ async def entrypoint(ctx: agents.JobContext):
         llm=_build_llm(config_dict.get("model_provider"), api_keys=user_api_keys, is_user_scoped=is_user_scoped),
         tts=_build_tts(os.getenv("TTS_PROVIDER"), config_dict.get("voice_id"), api_keys=user_api_keys, is_user_scoped=is_user_scoped),
     )
+    # Give end_call access to the session so it can speak farewells
+    fnc_ctx._session = session
 
     # --- Supabase: log transcripts via conversation_item_added ---
     # livekit-agents 0.8+ emits `conversation_item_added` instead of the old
@@ -988,6 +1064,10 @@ async def entrypoint(ctx: agents.JobContext):
                 logger.info(f"Lead {lead_id} marked as called")
             except Exception as e:
                 logger.warning(f"Failed to update lead status: {e}")
+        # Immediately trigger classification so write-back to CRM happens
+        # within seconds instead of waiting up to 60s for the pg_cron sweep.
+        if call_id:
+            asyncio.create_task(_trigger_classify(call_id))
 
 
 if __name__ == "__main__":
