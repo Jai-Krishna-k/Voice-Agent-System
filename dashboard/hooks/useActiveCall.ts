@@ -26,6 +26,8 @@ const ACTIVE_STATUSES = new Set([
   "calling",
 ]);
 
+const FRESH_WINDOW_MS = 30 * 60 * 1000;
+
 export function useActiveCall() {
   const [active, setActive] = useState<ActiveCall | null>(null);
   const [transcripts, setTranscripts] = useState<TranscriptLine[]>([]);
@@ -36,10 +38,12 @@ export function useActiveCall() {
     let mounted = true;
 
     const fetchActive = async () => {
+      const since = new Date(Date.now() - FRESH_WINDOW_MS).toISOString();
       const { data } = await supabase
         .from("calls")
         .select("id, phone_number, status, created_at, voice_id")
         .in("status", Array.from(ACTIVE_STATUSES))
+        .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(1);
       if (!mounted) return;
