@@ -79,17 +79,15 @@ export default function KnowledgeBasePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="px-10 py-8 space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-xl font-semibold text-white">Knowledge Base</h1>
-        <p className="text-sm text-muted mt-1">
-          Upload documents for your agent to reference during calls
-        </p>
+        <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Context</p>
+        <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">Knowledge Base</h1>
       </div>
 
       <div
         onClick={() => inputRef.current?.click()}
-        className="bg-card border-2 border-dashed border-card-border rounded-sm p-10 text-center cursor-pointer hover:border-accent/50 transition-colors group"
+        className="bg-card dashed-march p-10 text-center cursor-pointer hover:border-accent/50 transition-colors group"
       >
         {uploading ? (
           <Loader2 className="w-8 h-8 text-accent mx-auto mb-3 animate-spin" />

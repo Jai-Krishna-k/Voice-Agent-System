@@ -41,11 +41,11 @@ export default async function CallsPage() {
   }
 
   return (
-    <div className="max-w-6xl">
+    <div className="px-10 py-8 max-w-6xl">
       {/* Header */}
       <div className="flex items-end justify-between mb-8">
         <div>
-          <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Activity</p>
+          <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Archive</p>
           <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">Calls</h1>
         </div>
         <Link

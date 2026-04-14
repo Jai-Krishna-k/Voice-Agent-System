@@ -186,13 +186,11 @@ export default function AgentConfigPage() {
   const selected = configs.find((c) => c.id === selectedId);
 
   return (
-    <div className="space-y-6">
+    <div className="px-10 py-8 space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white">Agent Config</h1>
-          <p className="text-sm text-muted mt-1">
-            Create and manage multiple agent personalities
-          </p>
+          <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Configuration</p>
+          <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">Agents</h1>
         </div>
         <div className="flex items-center gap-2">
           <button

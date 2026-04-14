@@ -70,7 +70,7 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <div className="max-w-5xl">
+    <div className="px-10 py-8 max-w-5xl">
       {/* Header */}
       <div className="mb-8">
         <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Data Sources</p>

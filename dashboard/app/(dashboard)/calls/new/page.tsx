@@ -40,11 +40,11 @@ export default function NewCallPage() {
   const [tab, setTab] = useState<Tab>("single");
 
   return (
-    <div className="max-w-lg">
+    <div className="px-10 py-8 max-w-xl">
       {/* Header */}
       <div className="mb-8">
         <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Outbound</p>
-        <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">New Call</h1>
+        <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">Dispatch</h1>
       </div>
 
       {/* Tabs */}
