@@ -62,12 +62,14 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto">
         {nav.map((item) => {
+          // If the current path is an exact match for any nav item, only that item
+          // should be active — never activate a parent via prefix match.
+          const exactNavMatch = nav.some((n) => n.href === pathname);
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" &&
-              item.href !== "/calls/new" &&
-              pathname.startsWith(item.href)) ||
-            (item.href === "/calls/new" && pathname === "/calls/new");
+            (!exactNavMatch &&
+              item.href !== "/dashboard" &&
+              pathname.startsWith(item.href + "/"));
           return (
             <Link
               key={item.href}

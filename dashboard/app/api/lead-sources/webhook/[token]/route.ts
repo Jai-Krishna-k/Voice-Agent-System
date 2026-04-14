@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { getServiceClient } from "@/lib/supabase/service";
 import { loadSourceByWebhookToken, buildProviderCtx } from "@/lib/lead-sources/context";
 import { ingestLeads } from "@/lib/lead-sources/sync";
+import { dispatchPendingLeads } from "@/lib/lead-sources/dispatch-leads";
 import { verifyAppsScriptSignature } from "@/lib/lead-sources/google-sheets";
 import { hmacSha256Hex, timingSafeEqualHex } from "@/lib/crypto";
 
@@ -91,7 +92,17 @@ export async function POST(
       http_status: 200,
     });
 
-    return NextResponse.json({ ok: true, ingested: inserted, skipped });
+    // Dispatch any newly-inserted leads immediately instead of waiting for the cron
+    const dispatchResult = inserted > 0
+      ? await dispatchPendingLeads(source)
+      : { dispatched: 0, skipped: 0, errors: [] };
+
+    return NextResponse.json({
+      ok: true,
+      ingested: inserted,
+      skipped,
+      dispatched: dispatchResult.dispatched,
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "Webhook failed" }, { status: 500 });
   }

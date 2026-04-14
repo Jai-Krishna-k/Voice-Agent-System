@@ -74,10 +74,10 @@ export async function POST(request: Request) {
       webhook_token: randomToken(24),
       webhook_secret: randomToken(32),
       call_window: body.call_window ?? {
-        tz: "UTC",
+        tz: "Asia/Kolkata",
         days: [1, 2, 3, 4, 5],
         start: "09:00",
-        end: "18:00",
+        end: "21:00",
       },
     })
     .select()

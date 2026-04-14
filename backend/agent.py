@@ -391,6 +391,10 @@ def _resolve_key(keys: dict, key_name: str, env_name: str, is_user_scoped: bool)
 _SARVAM_V2_VOICES = {"anushka", "abhilash", "manisha", "vidya", "arya", "karun", "hitesh"}
 _OPENAI_TTS_VOICES = {"alloy", "echo", "fable", "onyx", "nova", "shimmer"}
 
+# Load Silero VAD once at worker startup — loading it inside entrypoint() would
+# re-run the ONNX model setup on every call, adding ~300-500ms of cold latency.
+_VAD = silero.VAD.load()
+
 
 def _build_tts(config_provider: str = None, config_voice: str = None,
                api_keys: dict = None, is_user_scoped: bool = False):
@@ -673,34 +677,38 @@ async def _wait_for_remote_audio(room, timeout: float = 1.0) -> None:
 
 async def _speak_opening_line(session: AgentSession, text: str, room=None) -> None:
     """Speak a fixed script via TTS (not LLM streaming) so PSTN hears the full sentence from the start.
-    Emits per-step timing logs so we can see where greeting latency is spent
-    (audio-ready wait vs floor sleep vs TTS first-chunk vs full playout)."""
+
+    TTS synthesis is kicked off immediately on call, then we wait for the audio
+    path (SIP RTP track) in parallel — this hides TTS API latency behind the
+    carrier setup time instead of adding to it.
+
+    Emits per-step timing logs so we can see where greeting latency is spent."""
     line = (text or "").strip()
     if not line:
         return
     t0 = time.time()
+
+    # Fire TTS synthesis NOW — don't wait for the audio path first.
+    # LiveKit will buffer the outbound audio until the subscriber is ready.
+    handle = session.say(line, allow_interruptions=False)
+    t_say = time.time()
+
+    # Concurrently wait for the remote audio track to be subscribed.
+    # This ensures the SIP media path is established before playout begins.
     if room is not None:
         await _wait_for_remote_audio(
             room,
-            timeout=float(os.getenv("GREETING_AUDIO_READY_TIMEOUT_SEC", "0.8")),
+            timeout=float(os.getenv("GREETING_AUDIO_READY_TIMEOUT_SEC", "0.5")),
         )
     t_ready = time.time()
-    # Small floor so the carrier has time to cut through after answer SDP.
-    # Set to 0 by default — the audio-ready wait already gates us.
-    floor = float(os.getenv("GREETING_POST_CONNECT_DELAY_SEC", "0.0"))
-    if floor > 0:
-        await asyncio.sleep(floor)
-    t_floor = time.time()
-    handle = session.say(line, allow_interruptions=False)
-    t_say = time.time()
+
     await handle.wait_for_playout()
     t_done = time.time()
     logger.info(
-        "greeting timings — audio_ready=%.2fs floor=%.2fs say_call=%.2fs playout=%.2fs total=%.2fs",
+        "greeting timings — say_call=%.2fs audio_ready=%.2fs playout=%.2fs total=%.2fs",
+        t_say - t0,
         t_ready - t0,
-        t_floor - t_ready,
-        t_say - t_floor,
-        t_done - t_say,
+        t_done - t_ready,
         t_done - t0,
     )
 
@@ -909,7 +917,7 @@ async def entrypoint(ctx: agents.JobContext):
     stt_kwargs = {"model": config.STT_MODEL, "language": config.STT_LANGUAGE, "api_key": dg_key}
 
     session = AgentSession(
-        vad=silero.VAD.load(),
+        vad=_VAD,
         stt=deepgram.STT(**stt_kwargs),
         llm=_build_llm(config_dict.get("model_provider"), api_keys=user_api_keys, is_user_scoped=is_user_scoped),
         tts=_build_tts(os.getenv("TTS_PROVIDER"), config_dict.get("voice_id"), api_keys=user_api_keys, is_user_scoped=is_user_scoped),
