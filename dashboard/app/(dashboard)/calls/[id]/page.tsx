@@ -43,7 +43,7 @@ export default async function CallDetailPage({
   }
 
   return (
-    <div className="px-10 py-8 space-y-6 max-w-6xl">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link
           href="/calls"

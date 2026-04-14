@@ -306,11 +306,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="px-10 py-8 space-y-6 max-w-4xl">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] text-stone-600 uppercase tracking-widest mb-1">Platform</p>
-          <h1 className="text-[22px] font-semibold text-stone-100 tracking-tight">Settings</h1>
+          <h1 className="text-xl font-semibold text-white">Settings</h1>
+          <p className="text-sm text-muted mt-1">Platform configuration and provider keys</p>
         </div>
         <button
           onClick={handleSave}
