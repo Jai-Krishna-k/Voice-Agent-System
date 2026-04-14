@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export type LiveEvent = {
@@ -66,6 +66,8 @@ export function useRealtimeEvents({
     return seeded.sort((a, b) => b.at - a.at).slice(0, max);
   });
 
+  const instanceId = useId();
+
   useEffect(() => {
     const supabase = createClient();
 
@@ -77,7 +79,7 @@ export function useRealtimeEvents({
     };
 
     const ch = supabase
-      .channel("operator-events")
+      .channel(`operator-events-${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "calls" },
@@ -133,7 +135,7 @@ export function useRealtimeEvents({
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [max]);
+  }, [max, instanceId]);
 
   return events;
 }

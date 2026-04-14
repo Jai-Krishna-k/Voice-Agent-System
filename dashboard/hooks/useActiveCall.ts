@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export type ActiveCall = {
@@ -29,6 +29,7 @@ const ACTIVE_STATUSES = new Set([
 export function useActiveCall() {
   const [active, setActive] = useState<ActiveCall | null>(null);
   const [transcripts, setTranscripts] = useState<TranscriptLine[]>([]);
+  const instanceId = useId();
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,7 +60,7 @@ export function useActiveCall() {
     fetchActive();
 
     const ch = supabase
-      .channel("active-call")
+      .channel(`active-call-${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "calls" },
@@ -84,7 +85,7 @@ export function useActiveCall() {
       supabase.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [instanceId]);
 
   return { active, transcripts };
 }
