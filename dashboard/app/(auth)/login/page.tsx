@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2, Mail, Lock } from "lucide-react";
 
@@ -15,6 +15,13 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  // Show OAuth errors redirected from the callback route
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get("error");
+    if (urlError) setError(decodeURIComponent(urlError));
+  }, []);
 
   const handleGoogle = async () => {
     setError("");

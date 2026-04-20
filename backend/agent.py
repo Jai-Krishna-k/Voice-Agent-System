@@ -430,7 +430,7 @@ def _build_tts(config_provider: str = None, config_voice: str = None,
         model = os.getenv("SARVAM_TTS_MODEL", config.SARVAM_MODEL)
         voice = config_voice or os.getenv("SARVAM_VOICE", "anushka")
         language = os.getenv("SARVAM_LANGUAGE", config.SARVAM_LANGUAGE)
-        min_buf = int(os.getenv("SARVAM_MIN_BUFFER_SIZE", "40"))
+        min_buf = int(os.getenv("SARVAM_MIN_BUFFER_SIZE", "15"))
         return sarvam.TTS(
             model=model,
             speaker=voice,
@@ -756,10 +756,17 @@ class OutboundAssistant(Agent):
         if not user_text.strip():
             return
 
-        # Query Pinecone for relevant chunks
-        relevant = await _query_knowledge_base(
-            self._kb_user_id, user_text, top_k=5, api_keys=self._kb_api_keys
-        )
+        # Query Pinecone for relevant chunks (capped at 3s to avoid stalling the LLM)
+        try:
+            relevant = await asyncio.wait_for(
+                _query_knowledge_base(
+                    self._kb_user_id, user_text, top_k=5, api_keys=self._kb_api_keys
+                ),
+                timeout=3.0,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("KB vector query timed out after 3s, skipping context injection")
+            relevant = None
         if relevant:
             turn_ctx.add_message(
                 role="system",
@@ -780,8 +787,9 @@ async def entrypoint(ctx: agents.JobContext):
     3. Initiates the SIP call to the phone number.
     4. Waits for answer before speaking.
     """
+    t_entry = time.time()
     logger.info(f"Connecting to room: {ctx.room.name}")
-    
+
     # parse the phone number AND config from the metadata
     phone_number = None
     config_dict = {}
@@ -842,16 +850,40 @@ async def entrypoint(ctx: agents.JobContext):
                     config_dict["greeting"] = config_dict.get("greeting", "Hello, how can I help you?")
                 break
 
-    # --- Supabase: fetch agent config (overrides defaults for outbound) ---
-    agent_config = None
-    if is_inbound:
-        # For inbound, we already loaded the config above via _fetch_inbound_config
-        agent_config = None  # Skip default config fetch
-    else:
-        agent_config = _fetch_agent_config(
+    # --- Supabase: fetch agent config, user keys, and knowledge base ---
+    # These three fetches are independent — run them in parallel via threads
+    # so they don't block the asyncio event loop (each is a sync HTTP call).
+    t_meta = time.time()
+    logger.info(f"[TIMING] metadata_parse={t_meta - t_entry:.2f}s")
+    is_user_scoped = bool(config_dict.get("user_id"))
+    _need_kb = not os.getenv("PINECONE_API_KEY")
+
+    async def _async_noop():
+        return None
+
+    agent_config_coro = (
+        _async_noop() if is_inbound
+        else asyncio.to_thread(
+            _fetch_agent_config,
             config_dict.get("user_id"),
             config_dict.get("agent_config_id"),
         )
+    )
+    user_keys_coro = asyncio.to_thread(
+        _fetch_user_settings, config_dict.get("user_id")
+    )
+    kb_coro = (
+        asyncio.to_thread(_fetch_knowledge_base, config_dict.get("user_id"))
+        if _need_kb else _async_noop()
+    )
+
+    agent_config, user_api_keys, knowledge_text = await asyncio.gather(
+        agent_config_coro, user_keys_coro, kb_coro
+    )
+    t_fetch = time.time()
+    logger.info(f"[TIMING] parallel_fetch={t_fetch - t_meta:.2f}s")
+    user_api_keys = user_api_keys or {}
+
     if agent_config:
         if agent_config.get("system_prompt") and not config_dict.get("user_prompt"):
             config_dict["user_prompt"] = agent_config["system_prompt"]
@@ -873,22 +905,16 @@ async def entrypoint(ctx: agents.JobContext):
         if config_dict.get("greeting"):
             config_dict["greeting"] = _render_lead_template(config_dict["greeting"], lead_obj)
 
-    # --- Supabase: fetch per-user API keys ---
-    is_user_scoped = bool(config_dict.get("user_id"))
-    user_api_keys = _fetch_user_settings(config_dict.get("user_id")) or {}
+    # Inject knowledge base text into system prompt (when Pinecone is NOT configured)
+    if knowledge_text:
+        kb_context = f"\n\n**KNOWLEDGE BASE (reference this information during the call):**\n{knowledge_text}"
+        existing_prompt = config_dict.get("user_prompt", "")
+        config_dict["user_prompt"] = existing_prompt + kb_context
 
-    # --- Supabase: fetch knowledge base and inject into context ---
-    # When Pinecone is configured, vector-based retrieval happens per-turn in on_user_turn_completed.
-    # Fall back to dumping all text into the system prompt when Pinecone is NOT configured.
-    if not os.getenv("PINECONE_API_KEY"):
-        knowledge_text = _fetch_knowledge_base(config_dict.get("user_id"))
-        if knowledge_text:
-            kb_context = f"\n\n**KNOWLEDGE BASE (reference this information during the call):**\n{knowledge_text}"
-            existing_prompt = config_dict.get("user_prompt", "")
-            config_dict["user_prompt"] = existing_prompt + kb_context
-
-    # --- Supabase: log call start ---
-    call_id = _log_call_start(phone_number or "unknown", ctx.room.name, config_dict)
+    # --- Supabase: log call start (non-blocking) ---
+    call_id = await asyncio.to_thread(
+        _log_call_start, phone_number or "unknown", ctx.room.name, config_dict
+    )
     call_start_time = time.time()
     # answered_at is set the moment the remote side picks up (inbound: on entry;
     # outbound: after create_sip_participant(wait_until_answered=True) returns).
@@ -896,6 +922,7 @@ async def entrypoint(ctx: agents.JobContext):
     # the "duration" would include the ringing/session-setup window and diverge
     # from what the carrier reports.
     answered_at: float | None = None
+    sip_disconnected_at: float | None = None  # set when SIP participant hangs up
     egress_id: str | None = None
     logger.info(f"call_id={call_id}, supabase_client={bool(_supabase_client)}")
 
@@ -952,7 +979,10 @@ async def entrypoint(ctx: agents.JobContext):
             speaker = "agent" if role == "assistant" else "user"
             start_ref = answered_at if answered_at is not None else call_start_time
             elapsed = int((time.time() - start_ref) * 1000)
-            _log_transcript(call_id, speaker, text, elapsed)
+            # Fire-and-forget in a thread so the sync HTTP call doesn't block audio
+            asyncio.create_task(
+                asyncio.to_thread(_log_transcript, call_id, speaker, text, elapsed)
+            )
         except Exception as e:
             logger.warning(f"Transcript event error: {e}")
 
@@ -971,13 +1001,16 @@ async def entrypoint(ctx: agents.JobContext):
             close_on_disconnect=True,
         ),
     )
+    t_session = time.time()
+    logger.info(f"[TIMING] session_start={t_session - t_fetch:.2f}s")
 
     # Logic to dial out or greet inbound:
     if is_inbound:
         # Inbound call — caller is already in the room, just greet them
         logger.info("Inbound call — greeting caller...")
         answered_at = time.time()
-        _log_call_end(call_id, "answered", 0) if call_id else None
+        if call_id:
+            asyncio.create_task(asyncio.to_thread(_log_call_end, call_id, "answered", 0))
         egress_id = await _start_recording(ctx, ctx.room.name)
         greeting = config_dict.get("greeting") or "Hello, how can I help you?"
         await _speak_opening_line(session, greeting, room=ctx.room)
@@ -1002,7 +1035,8 @@ async def entrypoint(ctx: agents.JobContext):
     if not is_inbound and should_dial:
         logger.info(f"Initiating outbound SIP call to {phone_number}...")
         try:
-            _log_call_end(call_id, "ringing", 0) if call_id else None
+            if call_id:
+                asyncio.create_task(asyncio.to_thread(_log_call_end, call_id, "ringing", 0))
             await ctx.api.sip.create_sip_participant(
                 api.CreateSIPParticipantRequest(
                     room_name=ctx.room.name,
@@ -1012,9 +1046,12 @@ async def entrypoint(ctx: agents.JobContext):
                     wait_until_answered=True,
                 )
             )
-            logger.info("Call answered! Agent is now listening.")
+            t_dial = time.time()
+            logger.info(f"Call answered! Agent is now listening.")
+            logger.info(f"[TIMING] sip_dial={t_dial - t_session:.2f}s total={t_dial - t_entry:.2f}s")
             answered_at = time.time()
-            _log_call_end(call_id, "answered", 0) if call_id else None
+            if call_id:
+                asyncio.create_task(asyncio.to_thread(_log_call_end, call_id, "answered", 0))
             egress_id = await _start_recording(ctx, ctx.room.name)
 
             greeting = config_dict.get("greeting") or config.INITIAL_GREETING
@@ -1023,59 +1060,75 @@ async def entrypoint(ctx: agents.JobContext):
         except Exception as e:
             logger.error(f"Failed to place outbound call: {e}")
             duration = int(time.time() - (answered_at or call_start_time))
-            _log_call_end(call_id, "failed", duration)
+            await asyncio.to_thread(_log_call_end, call_id, "failed", duration)
             ctx.shutdown()
     elif not is_inbound:
         # Dashboard dispatch path: SIP participant was already in the room when
         # the agent joined, so "answered" is now.
         logger.info("Detecting if we should greet...")
         answered_at = time.time()
-        _log_call_end(call_id, "answered", 0) if call_id else None
+        if call_id:
+            asyncio.create_task(asyncio.to_thread(_log_call_end, call_id, "answered", 0))
         egress_id = await _start_recording(ctx, ctx.room.name)
         fallback = config_dict.get("greeting") or config.fallback_greeting
         await _speak_opening_line(session, fallback, room=ctx.room)
 
-    # Log completion when the room disconnects
+    # Track the exact moment the SIP participant hangs up — this is the true
+    # call end time.  The room "disconnected" event fires later (after session
+    # cleanup / egress stop), so using time.time() there inflates duration.
+    @ctx.room.on("participant_disconnected")
+    def _on_participant_left(participant):
+        nonlocal sip_disconnected_at
+        if "sip_" in participant.identity:
+            sip_disconnected_at = time.time()
+            logger.info(f"SIP participant disconnected: {participant.identity}")
+
+    # Log completion when the room disconnects.
+    # All Supabase calls are offloaded to threads so they never block the
+    # event loop (which previously froze the worker for seconds).
     @ctx.room.on("disconnected")
     def _on_disconnect(*_args):
-        # Duration is measured from the moment the remote side answered, not
-        # from when the agent joined the room, so it matches the carrier log.
-        start_ref = answered_at if answered_at is not None else call_start_time
-        duration = int(time.time() - start_ref)
-        _log_call_end(call_id, "completed", duration)
-        logger.info(f"Call completed — duration: {duration}s")
-        # Explicitly stop egress instead of relying on the room-empty auto-stop,
-        # which adds ~20s of trailing silence to the recording.
-        if egress_id:
-            asyncio.create_task(_stop_egress_safely(ctx, egress_id))
-        # Persist recording URL if egress was started.
-        if egress_id and call_id and _supabase_client:
-            try:
-                url = _recording_public_url(ctx.room.name)
-                _supabase_client.table("calls").update(
-                    {"recording_url": url}
-                ).eq("id", call_id).execute()
-                logger.info(f"Recording URL saved: {url}")
-            except Exception as e:
-                logger.warning(f"Failed to save recording URL: {e}")
-        # Move the lead out of 'queued' so it can be retried or re-dispatched.
-        # The cron classifier will later refine this to the actual outcome;
-        # this just prevents leads from getting permanently stuck in 'queued'
-        # when the classifier cron hasn't run yet (e.g. local dev).
-        lead_id = config_dict.get("lead_id")
-        if lead_id and _supabase_client:
-            try:
-                _supabase_client.table("leads").update({
-                    "status": "called",
-                    "updated_at": "now()",
-                }).eq("id", lead_id).eq("status", "queued").execute()
-                logger.info(f"Lead {lead_id} marked as called")
-            except Exception as e:
-                logger.warning(f"Failed to update lead status: {e}")
-        # Immediately trigger classification so write-back to CRM happens
-        # within seconds instead of waiting up to 60s for the pg_cron sweep.
-        if call_id:
-            asyncio.create_task(_trigger_classify(call_id))
+        async def _cleanup():
+            # Use the SIP participant's actual hangup time for accurate duration
+            end_time = sip_disconnected_at or time.time()
+            start_ref = answered_at if answered_at is not None else call_start_time
+            duration = int(end_time - start_ref)
+            await asyncio.to_thread(_log_call_end, call_id, "completed", duration)
+            logger.info(f"Call completed — duration: {duration}s")
+            # Explicitly stop egress instead of relying on the room-empty auto-stop,
+            # which adds ~20s of trailing silence to the recording.
+            if egress_id:
+                await _stop_egress_safely(ctx, egress_id)
+            # Persist recording URL if egress was started.
+            if egress_id and call_id and _supabase_client:
+                try:
+                    url = _recording_public_url(ctx.room.name)
+                    await asyncio.to_thread(
+                        lambda: _supabase_client.table("calls").update(
+                            {"recording_url": url}
+                        ).eq("id", call_id).execute()
+                    )
+                    logger.info(f"Recording URL saved: {url}")
+                except Exception as e:
+                    logger.warning(f"Failed to save recording URL: {e}")
+            # Move the lead out of 'queued' so it can be retried or re-dispatched.
+            lead_id = config_dict.get("lead_id")
+            if lead_id and _supabase_client:
+                try:
+                    await asyncio.to_thread(
+                        lambda: _supabase_client.table("leads").update({
+                            "status": "called",
+                            "updated_at": "now()",
+                        }).eq("id", lead_id).eq("status", "queued").execute()
+                    )
+                    logger.info(f"Lead {lead_id} marked as called")
+                except Exception as e:
+                    logger.warning(f"Failed to update lead status: {e}")
+            # Immediately trigger classification so write-back to CRM happens
+            # within seconds instead of waiting up to 60s for the pg_cron sweep.
+            if call_id:
+                await _trigger_classify(call_id)
+        asyncio.create_task(_cleanup())
 
 
 if __name__ == "__main__":

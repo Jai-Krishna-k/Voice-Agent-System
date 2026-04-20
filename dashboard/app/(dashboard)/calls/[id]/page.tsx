@@ -2,6 +2,7 @@ import { ArrowLeft, Phone, Bot, User } from "lucide-react";
 import Link from "next/link";
 import { getCallById, getTranscriptsByCallId } from "@/lib/supabase/queries";
 import { notFound } from "next/navigation";
+import FormattedDate from "@/components/FormattedDate";
 
 function formatDuration(secs: number | null) {
   if (!secs) return "—";
@@ -98,7 +99,7 @@ export default async function CallDetailPage({
                 <div className="flex justify-between">
                   <span className="text-muted">Date</span>
                   <span className="text-stone-300">
-                    {new Date(call.created_at).toLocaleString("en-IN")}
+                    <FormattedDate date={call.created_at} format="full" />
                   </span>
                 </div>
               </div>

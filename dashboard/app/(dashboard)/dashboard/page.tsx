@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCallStats, getRecentCalls, getCallsPerDay } from "@/lib/supabase/queries";
 import CallsChart from "./CallsChart";
+import FormattedDate from "@/components/FormattedDate";
 
 function formatDuration(secs: number) {
   if (!secs) return "0s";
@@ -114,12 +115,7 @@ export default async function DashboardPage() {
                   {call.duration_secs ? formatDuration(call.duration_secs) : "—"}
                 </span>
                 <span className="text-xs text-stone-700 ml-6 w-36 text-right shrink-0">
-                  {new Date(call.created_at).toLocaleString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  <FormattedDate date={call.created_at} />
                 </span>
               </Link>
             ))}

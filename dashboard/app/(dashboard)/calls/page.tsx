@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCalls } from "@/lib/supabase/queries";
+import FormattedDate from "@/components/FormattedDate";
 
 function statusColor(status: string) {
   const map: Record<string, string> = {
@@ -21,14 +22,6 @@ function formatDuration(secs: number | null) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-function formatDate(date: string) {
-  return new Date(date).toLocaleString("en-IN", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function CallsPage() {
   let calls: any[] = [];
@@ -91,7 +84,7 @@ export default async function CallsPage() {
                 {call.voice_id || "—"}
               </span>
               <span className="text-xs text-stone-700 ml-auto">
-                {formatDate(call.created_at)}
+                <FormattedDate date={call.created_at} />
               </span>
             </Link>
           ))

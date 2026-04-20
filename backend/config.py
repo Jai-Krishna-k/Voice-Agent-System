@@ -41,7 +41,7 @@ fallback_greeting = "Hello? I am calling to inquire about Aryantra's ad creative
 # --- 2. SPEECH-TO-TEXT (STT) SETTINGS ---
 # We use Deepgram for high-speed transcription.
 STT_PROVIDER = "deepgram"
-STT_MODEL = "nova-2"  # Recommended: "nova-2" (balanced) or "nova-3" (newest)
+STT_MODEL = "nova-3"  # "nova-3" (newest, faster) or "nova-2" (balanced fallback)
 STT_LANGUAGE = "en"   # "en" supports multi-language code switching in Nova 2
 
 
