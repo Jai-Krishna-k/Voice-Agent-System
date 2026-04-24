@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Check, Copy } from "lucide-react";
+import { ArrowLeft, Loader2, Check, Copy, ChevronDown } from "lucide-react";
 
 interface PreviewResult {
   columns: string[];
@@ -294,19 +294,44 @@ function MappingRow({
   onChange: (v: string) => void;
   options: string[];
 }) {
+  const [open, setOpen] = useState(false);
+  const filtered = options.filter((c) => c !== "__lead_uid");
+
   return (
     <div>
       <label className="text-xs text-stone-400 mb-1.5 block">{label}</label>
-      <select
-        className="input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">— select —</option>
-        {options.filter((c) => c !== "__lead_uid").map((c) => (
-          <option key={c} value={c}>{c}</option>
-        ))}
-      </select>
+      <div className="relative">
+        <button
+          type="button"
+          className="input w-full text-left flex items-center justify-between"
+          onClick={() => setOpen((o) => !o)}
+        >
+          <span className={value ? "text-white" : "text-stone-500"}>{value || "— select —"}</span>
+          <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div className="absolute z-50 w-full mt-1 rounded-md border border-white/10 bg-zinc-900 shadow-xl max-h-56 overflow-auto">
+              <div
+                className="px-3 py-2 text-sm text-stone-500 cursor-pointer hover:bg-white/5"
+                onClick={() => { onChange(""); setOpen(false); }}
+              >
+                — select —
+              </div>
+              {filtered.map((c) => (
+                <div
+                  key={c}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-white/5 ${value === c ? "text-indigo-400" : "text-stone-200"}`}
+                  onClick={() => { onChange(c); setOpen(false); }}
+                >
+                  {c}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
