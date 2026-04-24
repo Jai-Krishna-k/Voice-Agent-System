@@ -10,6 +10,9 @@ import type {
   WritebackInstruction,
 } from "./types";
 
+import { isTerminalOutcome } from "./outcomes";
+import type { OutcomeCode } from "./outcomes";
+
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const SHEETS_SCOPES = [
@@ -120,7 +123,12 @@ function rowsToRawLeads(
     }
     let uid: string | null = uidCol >= 0 ? String(row[uidCol] ?? "").trim() : "";
     if (!uid) uid = `row-${r + 1}`;
-    leads.push({ externalId: uid, fields });
+    const outcomeVal = String(fields[OUTCOME_COL_HEADER] ?? "").trim();
+    const initialStatus =
+      outcomeVal && isTerminalOutcome(outcomeVal as OutcomeCode)
+        ? ("do_not_call" as const)
+        : ("new" as const);
+    leads.push({ externalId: uid, fields, initialStatus });
   }
   return { columns, leads };
 }

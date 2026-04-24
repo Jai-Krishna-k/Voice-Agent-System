@@ -6,6 +6,7 @@ export type ProviderId = "google_sheets" | "hubspot" | "pipedrive";
 export interface RawLead {
   externalId: string;
   fields: Record<string, any>;
+  initialStatus?: "new" | "do_not_call";
 }
 
 export interface NormalizedLead {

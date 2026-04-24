@@ -13,36 +13,63 @@ export interface SyncResult {
 export async function ingestLeads(
   source: LeadSourceRow,
   rawLeads: RawLead[]
-): Promise<{ inserted: number; skipped: number }> {
+): Promise<{ inserted: number; skipped: number; insertedIds: string[] }> {
   const svc = getServiceClient();
-  let inserted = 0;
   let skipped = 0;
+  const insertedIds: string[] = [];
   for (const raw of rawLeads) {
     const norm = mapRawLead(raw, source.field_mapping || {});
     if (!norm.phone) {
       skipped++;
       continue;
     }
-    const { error } = await svc.from("leads").upsert(
-      {
-        user_id: source.user_id,
-        lead_source_id: source.id,
-        external_id: norm.externalId,
-        phone: norm.phone,
-        name: norm.name,
-        email: norm.email,
-        raw_fields: { ...norm.raw, __custom: norm.custom },
-        status: "new",
-      },
-      { onConflict: "lead_source_id,external_id", ignoreDuplicates: true }
-    );
+    // `.select("id")` combined with `ignoreDuplicates: true` (ON CONFLICT
+    // DO NOTHING) returns the row only when a new one was actually inserted;
+    // a conflict returns no rows. That's how we distinguish fresh ingests
+    // from redelivered webhooks / re-synced sheet rows and, critically, how
+    // the caller knows which leads to dispatch (instead of sweeping the
+    // whole "status=new" backlog and picking up stale duplicates).
+    const { data, error } = await svc
+      .from("leads")
+      .upsert(
+        {
+          user_id: source.user_id,
+          lead_source_id: source.id,
+          external_id: norm.externalId,
+          phone: norm.phone,
+          name: norm.name,
+          email: norm.email,
+          raw_fields: { ...norm.raw, __custom: norm.custom },
+          status: raw.initialStatus ?? "new",
+        },
+        { onConflict: "lead_source_id,external_id", ignoreDuplicates: true }
+      )
+      .select("id");
     if (error) {
       skipped++;
       continue;
     }
-    inserted++;
+    if (data && data.length > 0) {
+      insertedIds.push(data[0].id);
+    } else {
+      skipped++;
+    }
   }
-  return { inserted, skipped };
+  // Retroactively mark any existing new/queued leads as do_not_call if the
+  // sheet now has a terminal outcome for them — handles leads already in DB.
+  const terminalIds = rawLeads
+    .filter((r) => r.initialStatus === "do_not_call")
+    .map((r) => r.externalId);
+  if (terminalIds.length > 0) {
+    await svc
+      .from("leads")
+      .update({ status: "do_not_call" })
+      .eq("lead_source_id", source.id)
+      .in("external_id", terminalIds)
+      .in("status", ["new", "queued"]);
+  }
+
+  return { inserted: insertedIds.length, skipped, insertedIds };
 }
 
 export async function runSourceSync(
