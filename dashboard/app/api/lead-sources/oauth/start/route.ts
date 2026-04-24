@@ -7,7 +7,7 @@ import type { ProviderId } from "@/lib/lead-sources/types";
 function redirectUri(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
   if (!base) throw new Error("NEXT_PUBLIC_APP_URL is not set");
-  return `${base.replace(/\/$/, "")}/api/lead-sources/oauth/callback`;
+  return `${base.trim().replace(/\/$/, "")}/api/lead-sources/oauth/callback`;
 }
 
 export async function GET(req: Request) {
