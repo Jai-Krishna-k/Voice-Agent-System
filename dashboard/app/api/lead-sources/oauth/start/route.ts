@@ -4,10 +4,10 @@ import { getProvider } from "@/lib/lead-sources/registry";
 import { signState } from "@/lib/lead-sources/oauth-state";
 import type { ProviderId } from "@/lib/lead-sources/types";
 
-function redirectUri(provider: string): string {
+function redirectUri(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
   if (!base) throw new Error("NEXT_PUBLIC_APP_URL is not set");
-  return `${base.replace(/\/$/, "")}/api/lead-sources/oauth/callback?provider=${provider}`;
+  return `${base.replace(/\/$/, "")}/api/lead-sources/oauth/callback`;
 }
 
 export async function GET(req: Request) {
@@ -22,6 +22,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Provider does not support OAuth" }, { status: 400 });
   }
   const state = signState({ userId: user.id, provider });
-  const url = impl.oauthStart(state, redirectUri(provider));
+  const url = impl.oauthStart(state, redirectUri());
   return NextResponse.redirect(url);
 }
