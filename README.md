@@ -16,6 +16,7 @@ Designed for reliability, speed, and ease of deployment.
 ### 1. Prerequisites
 - Python 3.10+ (Recommended: 3.10.13)
 - A [LiveKit Cloud](https://cloud.livekit.io/) account
+- A [Sarvam](https://www.sarvam.ai/apis/text-to-speech/) API Key
 - A [Deepgram](https://deepgram.com/) API Key
 - A [Groq](https://groq.com/) API Key
 - A SIP Provider (e.g., Vobiz)
